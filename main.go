@@ -3,6 +3,7 @@ package main
 import (
 	"backend-github-trending/db"
 	"backend-github-trending/handler"
+	"backend-github-trending/helper"
 	log "backend-github-trending/log"
 	"backend-github-trending/repository/repo_impl"
 	"backend-github-trending/router"
@@ -16,7 +17,6 @@ func init() {
 }
 
 func main() {
-
 	sql := &db.Sql{
 		Host:     "localhost",
 		Port:     5432,
@@ -28,6 +28,11 @@ func main() {
 	defer sql.Close()
 
 	e := echo.New()
+
+	structValidator := helper.NewStructValidator()
+	structValidator.RegisterValidate()
+
+	e.Validator = structValidator
 
 	userHandler := handler.UserHandler{
 		UserRepo: repo_impl.NewUserRepo(sql),
