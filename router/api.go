@@ -26,4 +26,8 @@ func (api *API) SetupRouter() {
 	// github repo
 	github := api.Echo.Group("/github", middleware.JWTMiddleware())
 	github.GET("/trending", api.RepoHandler.RepoTrending)
+
+	//bookmark
+	bookmark := api.Echo.Group("/bookmark", middleware.JWTMiddleware())
+	bookmark.GET("list", api.RepoHandler.SelectBookmarks)
 }

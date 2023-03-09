@@ -28,3 +28,23 @@ func (r RepoHandler) RepoTrending(c echo.Context) error {
 		Data:       repos,
 	})
 }
+
+func (r RepoHandler) SelectBookmarks(c echo.Context) error {
+	token := c.Get("user").(*jwt.Token)
+	claims := token.Claims.(*model.JwtCustomClaims)
+
+	repos, _ := r.GithubRepo.SelectAllBookmarks(
+		c.Request().Context(),
+		claims.UserId,
+	)
+
+	for i, repo := range repos {
+		repos[i].Contributors = strings.Split(repo.BuildBy, "")
+	}
+
+	return c.JSON(http.StatusOK, model.Response{
+		StatusCode: http.StatusOK,
+		Message:    "Xử lý thành công",
+		Data:       repos,
+	})
+}
