@@ -114,3 +114,57 @@ func (g GithubRepoImpl) UpdateRepo(c context.Context, repo model.GithubRepo) (mo
 
 	return repo, nil
 }
+
+func (g GithubRepoImpl) SelectAllBookmarks(c context.Context, userId string) ([]model.GithubRepo, error) {
+	repos := []model.GithubRepo{}
+
+	err := g.sql.Db.SelectContext(c, &repos,
+		`SELECT 
+					repos.name, repos.description, repos.url, 
+					repos.color, repos.lang, repos.fork, repos.stars, 
+					repos.stars_today, repos.build_by, true as bookmarked
+				FROM bookmarks 
+				INNER JOIN repos
+				ON bookmarks.user_id=$1 AND repos.name = bookmarks.repo_name`, userId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return repos, banana.BookmarkNotFound
+		}
+		log.Error(err.Error())
+	}
+
+	return repos, nil
+}
+
+func (g GithubRepoImpl) Bookmark(c context.Context, bid, nameRepo, userId string) error {
+	statement := `INSERT INTO bookmarks(
+					bid, user_id, repo_name, created_at, updated_at) 
+          		  VALUES($1, $2, $3, $4, $5)`
+
+	now := time.Now()
+	_, err := g.sql.Db.ExecContext(c, statement, bid, userId, nameRepo, now, now)
+	if err != nil {
+		if err, ok := err.(*pq.Error); ok {
+			if err.Code.Name() == "unique_violation" {
+				return banana.BookmarkConflic
+			}
+		}
+		log.Error(err.Error())
+		return banana.BookmarkFail
+	}
+	return nil
+}
+
+func (g GithubRepoImpl) DelBookmark(c context.Context, nameRepo, userId string) error {
+	result := g.sql.Db.MustExecContext(
+		c,
+		"DELETE FROM bookmarks WHERE repo_name = $1 AND user_id = $2",
+		nameRepo, userId)
+
+	_, err := result.RowsAffected()
+	if err != nil {
+		log.Error(err.Error())
+		return banana.BookmarkFail
+	}
+	return nil
+}

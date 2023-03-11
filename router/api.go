@@ -30,4 +30,6 @@ func (api *API) SetupRouter() {
 	//bookmark
 	bookmark := api.Echo.Group("/bookmark", middleware.JWTMiddleware())
 	bookmark.GET("list", api.RepoHandler.SelectBookmarks)
+	bookmark.POST("/add", api.RepoHandler.Bookmark)
+	bookmark.DELETE("/delete", api.RepoHandler.DelBookmark)
 }

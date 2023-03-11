@@ -107,24 +107,3 @@ func (u UserRepoImpl) UpdateUser(c context.Context, user model.User) (model.User
 
 	return user, nil
 }
-
-func (g GithubRepoImpl) SelectAllBookmarks(c context.Context, userId string) ([]model.GithubRepo, error) {
-	repos := []model.GithubRepo{}
-
-	err := g.sql.Db.SelectContext(c, &repos,
-		`SELECT 
-					repos.name, repos.description, repos.url, 
-					repos.color, repos.lang, repos.fork, repos.stars, 
-					repos.stars_today, repos.build_by, true as bookmarked
-				FROM bookmarks 
-				INNER JOIN repos
-				ON bookmarks.user_id=$1 AND repos.name = bookmarks.repo_name`, userId)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return repos, banana.BookmarkNotFound
-		}
-		log.Error(err.Error())
-	}
-
-	return repos, nil
-}
